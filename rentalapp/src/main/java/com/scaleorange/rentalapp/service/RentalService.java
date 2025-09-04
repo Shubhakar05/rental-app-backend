@@ -9,13 +9,21 @@ import java.util.List;
 public interface RentalService {
 
     /**
-     * Create a rental order by selecting laptops based on brand and price.
+     * Create a rental order by selecting laptops for a given number of months.
      *
-     * @param request DTO containing brand, price per month, and rental period.
-     * @param userUid UID of the logged-in user (from JWT)
-     * @return RentalResponseDTO with rental details.
+     * @param request   DTO containing laptop IDs, number of months, and optional rental time.
+     * @param userUid   UID of the logged-in user (from JWT)
+     * @return          RentalResponseDTO with rental details including total amount.
      */
     RentalResponseDTO createRental(RentalRequestDTO request, String userUid);
 
-    void createRentalForCart(String userUid, List<Laptops> laptops);
+    /**
+     * Create a rental order from cart items for multiple laptops.
+     * Cart items are not locked; the rental is saved for future processing.
+     *
+     * @param userUid       UID of the logged-in user (from JWT)
+     * @param laptops       List of laptops in the cart
+     * @param numberOfMonths Number of months for the rental
+     */
+    void createRentalForCart(String userUid, List<Laptops> laptops, long numberOfMonths);
 }

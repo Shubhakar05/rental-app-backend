@@ -3,6 +3,7 @@ package com.scaleorange.rentalapp.entitys;
 import com.scaleorange.rentalapp.enums.RentalStatusEnum;
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -19,14 +20,14 @@ public class RentalOrder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // auto-increment
+    private Long id;
 
     @Column(unique = true, nullable = false)
-    private String uid; // short unique string
+    private String uid;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private Users user; // Company Admin who rents
+    private Users user;
 
     @ManyToMany
     @JoinTable(
@@ -40,7 +41,19 @@ public class RentalOrder {
     private LocalDateTime returnTime;
 
     @Enumerated(EnumType.STRING)
-    private RentalStatusEnum status; // PENDING, CONFIRMED, COMPLETED, CANCELLED
+    private RentalStatusEnum status;
+
+    @Column(nullable = false)
+    private long numberOfMonths; // NEW: store rental duration
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalAmount; // NEW: store total price
+
+    @OneToMany(mappedBy = "rentalOrder", cascade = CascadeType.ALL)
+    private List<Payment> payments;
+
+    @OneToMany(mappedBy = "rentalOrder", cascade = CascadeType.ALL)
+    private List<InvoiceLineItem> invoiceLineItems;
 
     @PrePersist
     public void prePersist() {

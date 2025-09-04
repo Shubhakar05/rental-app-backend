@@ -9,7 +9,7 @@ import java.util.List;
 public class RentalRequestDTO {
 
     private String brand;
-    private Double pricePerMonth;
+    private List<Long> laptopIds;
     private LocalDateTime rentalTime;
-    private LocalDateTime returnTime;
+    private long numberOfMonths;
 }

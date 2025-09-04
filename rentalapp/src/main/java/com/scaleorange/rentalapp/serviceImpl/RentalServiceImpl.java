@@ -14,6 +14,7 @@ import com.scaleorange.rentalapp.service.RentalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -31,49 +32,14 @@ public class RentalServiceImpl implements RentalService {
         Users user = usersRepository.findByUid(userUid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Example: pick laptop by brand & price
-        List<Laptops> laptops = laptopRepository.findByBrandAndPricePerMonthAndStatus(
-                request.getBrand(),
-                request.getPricePerMonth(),
-                LaptopStatusEnum.AVAILABLE
-        );
+        // Fetch laptops by IDs
+        List<Laptops> laptops = laptopRepository.findAllById(request.getLaptopIds());
 
         if (laptops.isEmpty()) {
-            throw new RuntimeException("No available laptops found");
+            throw new RuntimeException("No laptops found for the given IDs");
         }
 
-        Laptops selectedLaptop = laptops.get(0);
-        selectedLaptop.setStatus(LaptopStatusEnum.LOCKED);
-        selectedLaptop.setLockTime(LocalDateTime.now());
-        laptopRepository.save(selectedLaptop);
-
-        RentalOrder rental = RentalOrder.builder()
-                .user(user)
-                .laptops(List.of(selectedLaptop))
-                .status(RentalStatusEnum.PENDING)
-                .rentalTime(request.getRentalTime() != null ? request.getRentalTime() : LocalDateTime.now())
-                .returnTime(request.getReturnTime())
-                .build();
-
-        rentalRepository.save(rental);
-
-        return RentalResponseDTO.builder()
-                .rentalUid(rental.getUid())
-                .userUid(user.getUid())
-                .laptopUids(List.of(selectedLaptop.getUid()))
-                .status(rental.getStatus())
-                .rentalTime(rental.getRentalTime())
-                .returnTime(rental.getReturnTime())
-                .build();
-    }
-
-    @Override
-    public void createRentalForCart(String userUid, List<Laptops> laptops) {
-        // Fetch user from JWT
-        Users user = usersRepository.findByUid(userUid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Lock all laptops
+        // Lock laptops for immediate rental
         laptops.forEach(laptop -> {
             if (laptop.getStatus() != LaptopStatusEnum.AVAILABLE) {
                 throw new RuntimeException("Laptop not available: " + laptop.getUid());
@@ -83,11 +49,59 @@ public class RentalServiceImpl implements RentalService {
             laptopRepository.save(laptop);
         });
 
+        // Calculate return time based on number of months
+        LocalDateTime rentalTime = request.getRentalTime() != null ? request.getRentalTime() : LocalDateTime.now();
+        LocalDateTime returnTime = rentalTime.plusMonths(request.getNumberOfMonths());
+
+        // Calculate total amount
+        double totalAmount = laptops.stream()
+                .mapToDouble(Laptops::getPricePerMonth)
+                .sum() * request.getNumberOfMonths();
+
+        // Save rental order
         RentalOrder rental = RentalOrder.builder()
                 .user(user)
                 .laptops(laptops)
                 .status(RentalStatusEnum.PENDING)
-                .rentalTime(LocalDateTime.now())
+                .rentalTime(rentalTime)
+                .returnTime(returnTime)
+                .build();
+
+        rentalRepository.save(rental);
+
+        // Build response DTO
+        return RentalResponseDTO.builder()
+                .rentalUid(rental.getUid())
+                .userUid(user.getUid())
+                .laptopUids(laptops.stream().map(Laptops::getUid).toList())
+                .brand(request.getBrand())
+                .status(rental.getStatus())
+                .rentalTime(rentalTime)
+                .returnTime(returnTime)
+                .numberOfMonths(request.getNumberOfMonths())
+                .totalAmount(BigDecimal.valueOf(totalAmount))
+                .build();
+    }
+
+    @Override
+    public void createRentalForCart(String userUid, List<Laptops> laptops, long numberOfMonths) {
+        // Fetch user from JWT
+        Users user = usersRepository.findByUid(userUid)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // No locking for cart items
+
+        // Calculate rental & return time
+        LocalDateTime rentalTime = LocalDateTime.now();
+        LocalDateTime returnTime = rentalTime.plusMonths(numberOfMonths);
+
+        // Save rental order
+        RentalOrder rental = RentalOrder.builder()
+                .user(user)
+                .laptops(laptops)
+                .status(RentalStatusEnum.PENDING)
+                .rentalTime(rentalTime)
+                .returnTime(returnTime)
                 .build();
 
         rentalRepository.save(rental);

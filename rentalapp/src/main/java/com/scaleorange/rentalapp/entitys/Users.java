@@ -18,12 +18,12 @@ import java.util.UUID;
 public class Users {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // numeric auto-increment
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false, nullable = false)
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String uid; // short unique string
+    private String uid;
 
     private String username;
     private String email;
@@ -32,7 +32,7 @@ public class Users {
     @Enumerated(EnumType.STRING)
     private RoleEnum role;
 
-    // Verification details
+
     private String panNumber;
     private String gstNumber;
     private String mcaNumber;
@@ -42,6 +42,11 @@ public class Users {
     private VerificationStatusEnum verificationStatus;
 
     private boolean verified;
+
+    // Link to the company the user belongs to (vendor or customer)
+    @ManyToOne
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     // Auto-generate UID before saving
     @PrePersist

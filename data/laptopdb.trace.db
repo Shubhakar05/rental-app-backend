@@ -350,3 +350,7 @@ org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "select *
 select * from USERS 
 
 DELETE FROM users WHERE email = 'superadmin@example.com' [42000-232]
+2025-09-04 11:46:45.806587+05:30 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "select * from USERS \000d\000a[*]select * from LAPTOPS"; SQL statement:
+select * from USERS 
+select * from LAPTOPS [42000-232]
