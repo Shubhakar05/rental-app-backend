@@ -12,6 +12,8 @@ import com.scaleorange.rentalapp.repository.RentalOrderRepository;
 import com.scaleorange.rentalapp.repository.UsersRepository;
 import com.scaleorange.rentalapp.service.RentalService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -26,18 +28,21 @@ public class RentalServiceImpl implements RentalService {
     private final LaptopRepository laptopRepository;
     private final UsersRepository usersRepository;
 
-    @Override
-    public RentalResponseDTO createRental(RentalRequestDTO request, String userUid) {
-        Users user = usersRepository.findByUid(userUid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        List<Laptops> laptops = laptopRepository.findAllById(request.getLaptopIds());
-
-        if (laptops.isEmpty()) {
-            throw new RuntimeException("No laptops found for the given IDs");
+    // Utility method to get authenticated user from JWT
+    private Users getAuthenticatedUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email;
+        if (principal instanceof UserDetails) {
+            email = ((UserDetails) principal).getUsername();
+        } else {
+            email = principal.toString();
         }
+        return usersRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+    }
 
-        // Lock laptops for immediate rental
+    // Utility method to lock laptops and calculate total amount
+    private BigDecimal lockLaptopsAndCalculateAmount(List<Laptops> laptops, long numberOfMonths) {
         laptops.forEach(laptop -> {
             if (laptop.getStatus() != LaptopStatusEnum.AVAILABLE) {
                 throw new RuntimeException("Laptop not available: " + laptop.getUid());
@@ -47,15 +52,25 @@ public class RentalServiceImpl implements RentalService {
             laptopRepository.save(laptop);
         });
 
+        return laptops.stream()
+                .map(laptop -> BigDecimal.valueOf(laptop.getPricePerMonth()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .multiply(BigDecimal.valueOf(numberOfMonths));
+    }
+
+    @Override
+    public RentalResponseDTO createRental(RentalRequestDTO request) {
+        Users user = getAuthenticatedUser();
+
+        List<Laptops> laptops = laptopRepository.findAllByUidIn(request.getLaptopUids());
+        if (laptops.isEmpty()) {
+            throw new RuntimeException("No laptops found for the given IDs");
+        }
+
         LocalDateTime rentalTime = request.getRentalTime() != null ? request.getRentalTime() : LocalDateTime.now();
         LocalDateTime returnTime = rentalTime.plusMonths(request.getNumberOfMonths());
 
-        // Calculate total amount
-        BigDecimal totalAmount = laptops.stream()
-                .map(laptop -> BigDecimal.valueOf(laptop.getPricePerMonth())) // convert double -> BigDecimal
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .multiply(BigDecimal.valueOf(request.getNumberOfMonths()));
-
+        BigDecimal totalAmount = lockLaptopsAndCalculateAmount(laptops, request.getNumberOfMonths());
 
         RentalOrder rental = RentalOrder.builder()
                 .user(user)
@@ -83,27 +98,43 @@ public class RentalServiceImpl implements RentalService {
     }
 
     @Override
-    public void createRentalForCart(String userUid, List<Laptops> laptops, long numberOfMonths,
+    public void createRentalForCart(List<Laptops> laptops, long numberOfMonths,
                                     LocalDateTime rentalTime, LocalDateTime returnTime, BigDecimal totalAmount) {
-        Users user = usersRepository.findByUid(userUid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Users user = getAuthenticatedUser();
+
+        if (laptops.isEmpty()) {
+            throw new RuntimeException("No laptops provided in the cart");
+        }
+
+        // Default rental and return times if null
+        if (rentalTime == null) rentalTime = LocalDateTime.now();
+        if (returnTime == null) returnTime = rentalTime.plusMonths(numberOfMonths);
+
+        // Lock laptops and calculate total amount if not provided
+        if (totalAmount == null) {
+            totalAmount = lockLaptopsAndCalculateAmount(laptops, numberOfMonths);
+        } else {
+            // Still lock laptops to prevent double booking
+            laptops.forEach(laptop -> {
+                if (laptop.getStatus() != LaptopStatusEnum.AVAILABLE) {
+                    throw new RuntimeException("Laptop not available: " + laptop.getUid());
+                }
+                laptop.setStatus(LaptopStatusEnum.LOCKED);
+                laptop.setLockTime(LocalDateTime.now());
+                laptopRepository.save(laptop);
+            });
+        }
 
         RentalOrder rental = RentalOrder.builder()
                 .user(user)
                 .laptops(laptops)
-                .status(RentalStatusEnum.ACTIVE)
-                .numberOfMonths(numberOfMonths)
+                .status(RentalStatusEnum.PENDING)
                 .rentalTime(rentalTime)
                 .returnTime(returnTime)
+                .numberOfMonths(numberOfMonths)
                 .totalAmount(totalAmount)
                 .build();
 
         rentalRepository.save(rental);
-
-        // Update laptop status to RENTED
-        laptops.forEach(laptop -> {
-            laptop.setStatus(LaptopStatusEnum.RENTED);
-            laptopRepository.save(laptop);
-        });
     }
 }

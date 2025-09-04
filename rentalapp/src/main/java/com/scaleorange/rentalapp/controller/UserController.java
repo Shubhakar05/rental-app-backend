@@ -60,7 +60,7 @@ public class UserController {
      * Approve user (Super Admin only) by UID.
      */
     @PutMapping("/{uid}/approve")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+
     public ResponseEntity<UserDto> approveUser(@PathVariable String uid) {
         UserDto response = userService.approveUser(uid);
         return ResponseEntity.ok(response);
@@ -70,7 +70,7 @@ public class UserController {
      * Reject user (Super Admin only) by UID.
      */
     @PutMapping("/{uid}/reject")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+
     public ResponseEntity<UserDto> rejectUser(
             @PathVariable String uid,
             @RequestParam String remarks) {
@@ -84,7 +84,7 @@ public class UserController {
      * Get all users by verification status (Super Admin only).
      */
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+
     public ResponseEntity<List<UserDto>> getUsersByStatus(@PathVariable VerificationStatusEnum status) {
         List<UserDto> users = userService.getUsersByStatus(status);
         return ResponseEntity.ok(users);

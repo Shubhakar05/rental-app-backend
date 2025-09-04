@@ -20,14 +20,14 @@ public class LaptopController {
     private final LaptopService laptopService;
 
     // Vendor or Super Admin can add laptops
-    @PreAuthorize("hasRole('VENDOR') or hasRole('SUPER_ADMIN')")
+
     @PostMapping
     public ResponseEntity<LaptopResponseDTO> addLaptop(@ModelAttribute LaptopRequestDTO request) {
         String vendorUid = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(laptopService.addLaptop(request, vendorUid));
     }
 
-    @PreAuthorize("hasRole('VENDOR') or hasRole('SUPER_ADMIN')")
+
     @PutMapping("/{uid}")
     public ResponseEntity<LaptopResponseDTO> updateLaptop(@PathVariable String uid,
                                                           @RequestBody LaptopRequestDTO request) {
@@ -35,7 +35,7 @@ public class LaptopController {
         return ResponseEntity.ok(laptopService.updateLaptop(uid, request, vendorUid));
     }
 
-    @PreAuthorize("hasRole('VENDOR') or hasRole('SUPER_ADMIN')")
+
     @DeleteMapping("/{uid}")
     public ResponseEntity<Void> deleteLaptop(@PathVariable String uid) {
         String vendorUid = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -44,19 +44,19 @@ public class LaptopController {
     }
 
     // Anyone with auth can read
-    @PreAuthorize("isAuthenticated()")
+
     @GetMapping("/{uid}")
     public ResponseEntity<LaptopResponseDTO> getLaptop(@PathVariable String uid) {
         return ResponseEntity.ok(laptopService.getLaptop(uid));
     }
 
-    @PreAuthorize("isAuthenticated()")
+
     @GetMapping
     public ResponseEntity<List<LaptopResponseDTO>> getAllLaptops() {
         return ResponseEntity.ok(laptopService.getAllLaptops());
     }
 
-    @PreAuthorize("isAuthenticated()")
+
     @GetMapping("/status/{status}")
     public ResponseEntity<List<LaptopResponseDTO>> getLaptopsByStatus(@PathVariable LaptopStatusEnum status) {
         return ResponseEntity.ok(laptopService.getLaptopsByStatus(status));

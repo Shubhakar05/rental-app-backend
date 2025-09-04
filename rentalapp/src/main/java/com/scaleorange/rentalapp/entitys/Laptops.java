@@ -35,8 +35,9 @@ public class Laptops {
 
     private LocalDateTime lockTime;
 
-    @Column(nullable = false)
-    private String vendorUid; // new: links laptop to vendor
+    // Make initially nullable to avoid migration issues
+    @Column(nullable = true)
+    private String vendorUid; // links laptop to vendor
 
     @PrePersist
     public void prePersist() {
@@ -45,6 +46,10 @@ public class Laptops {
         }
         if (status == null) {
             status = LaptopStatusEnum.AVAILABLE;
+        }
+        // Automatically set a default vendorUid for new rows
+        if (vendorUid == null) {
+            vendorUid = "default_vendor";
         }
     }
 

@@ -14,4 +14,7 @@ public interface LaptopRepository extends JpaRepository<Laptops, Long> {
     List<Laptops> findByStatus(LaptopStatusEnum status);
 
     List<Laptops> findByBrandAndPricePerMonthAndStatus(String brand, Double pricePerMonth, LaptopStatusEnum status);
+
+
+    List<Laptops> findAllByUidIn(List<String> uids);
 }

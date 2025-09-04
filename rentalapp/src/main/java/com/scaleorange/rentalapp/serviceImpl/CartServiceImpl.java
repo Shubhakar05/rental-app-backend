@@ -12,6 +12,7 @@ import com.scaleorange.rentalapp.service.CartService;
 import com.scaleorange.rentalapp.service.RentalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -33,15 +34,21 @@ public class CartServiceImpl implements CartService {
         return java.util.UUID.randomUUID().toString().substring(0, 12);
     }
 
-    private String getCurrentUserUid() {
-        return SecurityContextHolder.getContext().getAuthentication().getName();
+    private Users getAuthenticatedUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email;
+        if (principal instanceof UserDetails) {
+            email = ((UserDetails) principal).getUsername();
+        } else {
+            email = principal.toString();
+        }
+        return usersRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found"));
     }
 
     @Override
     public CartResponseDTO addToCart(CartRequestDTO request) {
-        String userUid = getCurrentUserUid();
-        Users user = usersRepository.findByUid(userUid)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Users user = getAuthenticatedUser();
 
         Cart cart = cartRepository.findByUserUid(user.getUid())
                 .orElse(Cart.builder().uid(generateUid()).user(user).laptops(new ArrayList<>()).build());
@@ -61,8 +68,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartResponseDTO removeFromCart(CartRequestDTO request) {
-        String userUid = getCurrentUserUid();
-        Cart cart = cartRepository.findByUserUid(userUid)
+        Users user = getAuthenticatedUser();
+
+        Cart cart = cartRepository.findByUserUid(user.getUid())
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
         cart.getLaptops().removeIf(laptop -> request.getLaptopUids().contains(laptop.getUid()));
@@ -72,16 +80,18 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartResponseDTO getCart() {
-        String userUid = getCurrentUserUid();
-        Cart cart = cartRepository.findByUserUid(userUid)
+        Users user = getAuthenticatedUser();
+
+        Cart cart = cartRepository.findByUserUid(user.getUid())
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
         return toDTO(cart, null, null, null, null);
     }
 
     @Override
     public CartResponseDTO checkout(long numberOfMonths) {
-        String userUid = getCurrentUserUid();
-        Cart cart = cartRepository.findByUserUid(userUid)
+        Users user = getAuthenticatedUser();
+
+        Cart cart = cartRepository.findByUserUid(user.getUid())
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
         if (cart.getLaptops().isEmpty()) {
@@ -94,12 +104,13 @@ public class CartServiceImpl implements CartService {
                         .multiply(BigDecimal.valueOf(numberOfMonths)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-
         LocalDateTime rentalTime = LocalDateTime.now();
         LocalDateTime returnTime = rentalTime.plusMonths(numberOfMonths);
 
-        rentalService.createRentalForCart(userUid, cart.getLaptops(), numberOfMonths, rentalTime, returnTime, totalAmount);
+        // Call RentalService to create rental for cart
+        rentalService.createRentalForCart(cart.getLaptops(), numberOfMonths, rentalTime, returnTime, totalAmount);
 
+        // Clear cart after checkout
         cart.getLaptops().clear();
         cartRepository.save(cart);
 

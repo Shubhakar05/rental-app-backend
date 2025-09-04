@@ -24,26 +24,24 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                // Disable CSRF (stateless API)
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // Allow H2 console frames
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
-
-                // Stateless session management
+                .headers(headers -> headers.frameOptions(frame -> frame.disable())) // H2 console
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
-
-                // Authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/signup/**").permitAll()
+                        // Public endpoints
                         .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/api/users/signup/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+
+                        // Role-based access
                         .requestMatchers("/api/users/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/rentals/create/**").hasAnyRole("COMPANY_ADMIN")
+                        .requestMatchers("/api/laptops/**").hasAnyRole("VENDOR_ADMIN")
+
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
-
-                // Add JWT filter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

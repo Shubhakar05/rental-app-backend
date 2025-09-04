@@ -15,25 +15,25 @@ public class CartController {
 
     private final CartService cartService;
 
-    @PreAuthorize("hasRole('COMPANY_ADMIN') or hasRole('SUPER_ADMIN')")
+
     @PostMapping("/add")
     public ResponseEntity<CartResponseDTO> addToCart(@RequestBody CartRequestDTO request) {
         return ResponseEntity.ok(cartService.addToCart(request));
     }
 
-    @PreAuthorize("hasRole('COMPANY_ADMIN') or hasRole('SUPER_ADMIN')")
+
     @PostMapping("/remove")
     public ResponseEntity<CartResponseDTO> removeFromCart(@RequestBody CartRequestDTO request) {
         return ResponseEntity.ok(cartService.removeFromCart(request));
     }
 
-    @PreAuthorize("hasRole('COMPANY_ADMIN') or hasRole('SUPER_ADMIN')")
+
     @GetMapping
     public ResponseEntity<CartResponseDTO> getCart() {
         return ResponseEntity.ok(cartService.getCart());
     }
 
-    @PreAuthorize("hasRole('COMPANY_ADMIN') or hasRole('SUPER_ADMIN')")
+
     @PostMapping("/checkout")
     public ResponseEntity<CartResponseDTO> checkout(@RequestParam long numberOfMonths) {
         return ResponseEntity.ok(cartService.checkout(numberOfMonths));

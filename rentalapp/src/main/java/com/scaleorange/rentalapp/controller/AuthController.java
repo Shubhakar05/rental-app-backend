@@ -8,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,10 +28,10 @@ public class AuthController {
     }
 
     /**
-     * Login endpoint: validates credentials and generates JWT token.
+     * Login endpoint: validates credentials and generates JWT token with multi-role support.
      */
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody Map<String, String> loginRequest) {
+    public Map<String, Object> login(@RequestBody Map<String, String> loginRequest) {
         String email = loginRequest.get("email");
         String password = loginRequest.get("password");
 
@@ -44,16 +45,16 @@ public class AuthController {
             Users user = usersRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Determine role (default USER if null)
-            String role = user.getRole() != null ? user.getRole().name() : "USER";
+            // Wrap role in a list (supports multi-role users in the future)
+            List<String> roles = List.of(user.getRole().name());
 
             // Generate JWT token
-            String token = jwtUtil.generateToken(user.getEmail(), role);
+            String token = jwtUtil.generateToken(user.getEmail(), roles);
 
             return Map.of(
                     "message", "Login successful",
                     "token", token,
-                    "role", role,
+                    "roles", roles,
                     "email", user.getEmail(),
                     "uid", user.getUid()
             );

@@ -116,16 +116,21 @@ public class UserServiceImpl implements UserService {
         }
 
         Users user = userOpt.get();
+
+        // Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return new LoginResponseDto("Invalid credentials", null, null, null, null);
         }
 
+        // Check verification status for non-super-admin users
         if (user.getRole() != RoleEnum.SUPER_ADMIN &&
                 user.getVerificationStatus() != VerificationStatusEnum.VERIFIED) {
             return new LoginResponseDto("User not approved yet", null, null, null, null);
         }
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        // Generate JWT token with a list of roles (even if single role)
+        List<String> roles = List.of(user.getRole().name()); // Wrap single role in a list
+        String token = jwtUtil.generateToken(user.getEmail(), roles);
 
         return new LoginResponseDto(
                 "Login successful",
