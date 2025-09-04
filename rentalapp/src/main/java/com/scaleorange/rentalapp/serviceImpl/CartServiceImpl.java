@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,7 +56,7 @@ public class CartServiceImpl implements CartService {
         }
 
         Cart saved = cartRepository.save(cart);
-        return toDTO(saved);
+        return toDTO(saved, null, null, null, null);
     }
 
     @Override
@@ -65,7 +67,7 @@ public class CartServiceImpl implements CartService {
 
         cart.getLaptops().removeIf(laptop -> request.getLaptopUids().contains(laptop.getUid()));
         Cart saved = cartRepository.save(cart);
-        return toDTO(saved);
+        return toDTO(saved, null, null, null, null);
     }
 
     @Override
@@ -73,11 +75,11 @@ public class CartServiceImpl implements CartService {
         String userUid = getCurrentUserUid();
         Cart cart = cartRepository.findByUserUid(userUid)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
-        return toDTO(cart);
+        return toDTO(cart, null, null, null, null);
     }
 
     @Override
-    public CartResponseDTO checkout() {
+    public CartResponseDTO checkout(long numberOfMonths) {
         String userUid = getCurrentUserUid();
         Cart cart = cartRepository.findByUserUid(userUid)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
@@ -86,19 +88,34 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("Cart is empty");
         }
 
-        rentalService.createRentalForCart(userUid, cart.getLaptops());
+        // Calculate total amount
+        BigDecimal totalAmount = cart.getLaptops().stream()
+                .map(laptop -> BigDecimal.valueOf(laptop.getPricePerMonth())
+                        .multiply(BigDecimal.valueOf(numberOfMonths)))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        cart.getLaptops().clear(); // optional: empty cart after checkout
+
+        LocalDateTime rentalTime = LocalDateTime.now();
+        LocalDateTime returnTime = rentalTime.plusMonths(numberOfMonths);
+
+        rentalService.createRentalForCart(userUid, cart.getLaptops(), numberOfMonths, rentalTime, returnTime, totalAmount);
+
+        cart.getLaptops().clear();
         cartRepository.save(cart);
 
-        return toDTO(cart);
+        return toDTO(cart, numberOfMonths, totalAmount, rentalTime, returnTime);
     }
 
-    private CartResponseDTO toDTO(Cart cart) {
+    private CartResponseDTO toDTO(Cart cart, Long numberOfMonths, BigDecimal totalAmount,
+                                  LocalDateTime rentalTime, LocalDateTime returnTime) {
         return CartResponseDTO.builder()
                 .cartUid(cart.getUid())
                 .userUid(cart.getUser().getUid())
                 .laptopUids(cart.getLaptops().stream().map(Laptops::getUid).collect(Collectors.toList()))
+                .numberOfMonths(numberOfMonths)
+                .totalAmount(totalAmount)
+                .rentalTime(rentalTime)
+                .returnTime(returnTime)
                 .build();
     }
 }

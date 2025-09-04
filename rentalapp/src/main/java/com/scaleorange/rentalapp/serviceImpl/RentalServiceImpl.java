@@ -28,11 +28,9 @@ public class RentalServiceImpl implements RentalService {
 
     @Override
     public RentalResponseDTO createRental(RentalRequestDTO request, String userUid) {
-        // Fetch user from JWT
         Users user = usersRepository.findByUid(userUid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Fetch laptops by IDs
         List<Laptops> laptops = laptopRepository.findAllById(request.getLaptopIds());
 
         if (laptops.isEmpty()) {
@@ -49,27 +47,28 @@ public class RentalServiceImpl implements RentalService {
             laptopRepository.save(laptop);
         });
 
-        // Calculate return time based on number of months
         LocalDateTime rentalTime = request.getRentalTime() != null ? request.getRentalTime() : LocalDateTime.now();
         LocalDateTime returnTime = rentalTime.plusMonths(request.getNumberOfMonths());
 
         // Calculate total amount
-        double totalAmount = laptops.stream()
-                .mapToDouble(Laptops::getPricePerMonth)
-                .sum() * request.getNumberOfMonths();
+        BigDecimal totalAmount = laptops.stream()
+                .map(laptop -> BigDecimal.valueOf(laptop.getPricePerMonth())) // convert double -> BigDecimal
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .multiply(BigDecimal.valueOf(request.getNumberOfMonths()));
 
-        // Save rental order
+
         RentalOrder rental = RentalOrder.builder()
                 .user(user)
                 .laptops(laptops)
                 .status(RentalStatusEnum.PENDING)
                 .rentalTime(rentalTime)
                 .returnTime(returnTime)
+                .numberOfMonths(request.getNumberOfMonths())
+                .totalAmount(totalAmount)
                 .build();
 
         rentalRepository.save(rental);
 
-        // Build response DTO
         return RentalResponseDTO.builder()
                 .rentalUid(rental.getUid())
                 .userUid(user.getUid())
@@ -79,31 +78,32 @@ public class RentalServiceImpl implements RentalService {
                 .rentalTime(rentalTime)
                 .returnTime(returnTime)
                 .numberOfMonths(request.getNumberOfMonths())
-                .totalAmount(BigDecimal.valueOf(totalAmount))
+                .totalAmount(totalAmount)
                 .build();
     }
 
     @Override
-    public void createRentalForCart(String userUid, List<Laptops> laptops, long numberOfMonths) {
-        // Fetch user from JWT
+    public void createRentalForCart(String userUid, List<Laptops> laptops, long numberOfMonths,
+                                    LocalDateTime rentalTime, LocalDateTime returnTime, BigDecimal totalAmount) {
         Users user = usersRepository.findByUid(userUid)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // No locking for cart items
-
-        // Calculate rental & return time
-        LocalDateTime rentalTime = LocalDateTime.now();
-        LocalDateTime returnTime = rentalTime.plusMonths(numberOfMonths);
-
-        // Save rental order
         RentalOrder rental = RentalOrder.builder()
                 .user(user)
                 .laptops(laptops)
-                .status(RentalStatusEnum.PENDING)
+                .status(RentalStatusEnum.ACTIVE)
+                .numberOfMonths(numberOfMonths)
                 .rentalTime(rentalTime)
                 .returnTime(returnTime)
+                .totalAmount(totalAmount)
                 .build();
 
         rentalRepository.save(rental);
+
+        // Update laptop status to RENTED
+        laptops.forEach(laptop -> {
+            laptop.setStatus(LaptopStatusEnum.RENTED);
+            laptopRepository.save(laptop);
+        });
     }
 }

@@ -35,7 +35,7 @@ public class CartController {
 
     @PreAuthorize("hasRole('COMPANY_ADMIN') or hasRole('SUPER_ADMIN')")
     @PostMapping("/checkout")
-    public ResponseEntity<CartResponseDTO> checkout() {
-        return ResponseEntity.ok(cartService.checkout());
+    public ResponseEntity<CartResponseDTO> checkout(@RequestParam long numberOfMonths) {
+        return ResponseEntity.ok(cartService.checkout(numberOfMonths));
     }
 }

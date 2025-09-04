@@ -22,6 +22,7 @@ public interface CartService {
 
     /**
      * Checkout the current user's cart and create a rental (UID from JWT).
+     * @param numberOfMonths Duration of rental in months.
      */
-    CartResponseDTO checkout();
+    CartResponseDTO checkout(long numberOfMonths);
 }
