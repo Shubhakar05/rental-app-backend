@@ -33,14 +33,17 @@ public class SecurityConfig {
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/api/users/signup/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/payment/**").permitAll()
 
                         // Role-based access
                         .requestMatchers("/api/users/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/rentals/create/**").hasAnyRole("COMPANY_ADMIN")
                         .requestMatchers("/api/laptops/**").hasAnyRole("VENDOR_ADMIN")
 
+
+
                         // All other requests require authentication
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

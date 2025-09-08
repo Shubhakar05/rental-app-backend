@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Page</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+<h2>Open Razorpay Payment Page with JWT</h2>
+
+<!-- JWT Input Form -->
+<form id="paymentForm">
+    <label>Rental Order ID:</label>
+    <input type="number" id="orderId" required><br><br>
+
+    <label>JWT Token:</label>
+    <textarea id="jwt" rows="3" cols="60" required></textarea><br><br>
+
+    <button type="submit">Fetch Payment Details</button>
+</form>
+
+<hr>
+
+<!-- Razorpay Checkout Section (hidden until order fetched) -->
+<div id="checkoutSection" style="display:none;">
+    <h2>Complete Your Payment</h2>
+    <p>Amount to Pay: ₹ <span id="amountDisplay"></span></p>
+    <button id="rzp-button">Pay Now</button>
+</div>
+
+<script>
+    document.getElementById("paymentForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const orderId = document.getElementById("orderId").value;
+        const jwt = document.getElementById("jwt").value;
+
+        // Fetch payment details from backend
+        fetch("http://localhost:8080/payment/raz/" + orderId, {
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + jwt
+            }
+        })
+        .then(res => res.json()) // expects JSON PaymentResponseDTO
+        .then(payment => {
+            // Show checkout section
+            document.getElementById("checkoutSection").style.display = "block";
+            document.getElementById("amountDisplay").textContent = payment.amount;
+
+            // Configure Razorpay
+            var options = {
+                "key": payment.key, // Razorpay Key ID
+                "amount": payment.amount * 100, // in paise
+                "currency": payment.currency,
+                "name": "Laptop Rental Service",
+                "description": "Rental Payment",
+                "order_id": payment.razorpayOrderId,
+                "handler": function(response) {
+                    // Call backend callback API
+                    fetch("/payment/callback", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            rentalUid: payment.rentalUid,               // ✅ Include rentalUid
+                            razorpayOrderId: response.razorpay_order_id,
+                            razorpayPaymentId: response.razorpay_payment_id,
+                            razorpaySignature: response.razorpay_signature
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => alert(data.message))
+                    .catch(err => alert("Payment verification failed: " + err));
+                },
+                "theme": {
+                    "color": "#3399cc"
+                }
+            };
+
+            var rzp1 = new Razorpay(options);
+            document.getElementById('rzp-button').onclick = function(e) {
+                rzp1.open();
+                e.preventDefault();
+            }
+        })
+        .catch(err => alert("Error fetching payment details: " + err));
+    });
+</script>
+
+</body>
+</html>

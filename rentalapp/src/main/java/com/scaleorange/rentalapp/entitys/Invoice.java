@@ -28,13 +28,10 @@ public class Invoice {
     @Column(unique = true, nullable = false)
     private String invoiceNumber;
 
+    // Link to rental order
     @ManyToOne
-    @JoinColumn(name = "issuer_company_id", nullable = false)
-    private Company issuerCompany;
-
-    @ManyToOne
-    @JoinColumn(name = "receiver_company_id", nullable = false)
-    private Company receiverCompany;
+    @JoinColumn(name = "rental_order_id", nullable = false)
+    private RentalOrder rentalOrder;
 
     private LocalDate periodStart;
     private LocalDate periodEnd;

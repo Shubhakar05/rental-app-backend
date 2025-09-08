@@ -14,12 +14,18 @@ public class SigninRequestDto {
     private String password;
     private RoleEnum role;
 
-    // Optional verification details (used by Vendor/Company Admin)
-    private String panNumber;
+    // Company-related details (needed during signup)
+    private String companyName;
     private String gstNumber;
+    private String panNumber;
     private String mcaNumber;
 
-    // Optional file for multipart uploads (Vendor/Company Admin)
-    @ToString.Exclude // prevents printing large file in logs
-    private transient MultipartFile document; // transient ensures JSON deserialization ignores it
+    private String address;
+    private String contactEmail;
+    private String contactPhone;
+    private String state;
+
+    // Optional file upload (like GST/PAN certificate, docs)
+    @ToString.Exclude
+    private transient MultipartFile document;
 }

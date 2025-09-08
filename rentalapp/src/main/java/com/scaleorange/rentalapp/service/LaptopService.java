@@ -19,4 +19,9 @@ public interface LaptopService {
     List<LaptopResponseDTO> getAllLaptops();
 
     List<LaptopResponseDTO> getLaptopsByStatus(LaptopStatusEnum status);
+
+    /**
+     * Marks a laptop as rented after successful payment
+     */
+    void markLaptopAsRented(String laptopUid);
 }

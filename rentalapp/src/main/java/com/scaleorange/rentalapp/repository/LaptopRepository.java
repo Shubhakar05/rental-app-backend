@@ -17,4 +17,5 @@ public interface LaptopRepository extends JpaRepository<Laptops, Long> {
 
 
     List<Laptops> findAllByUidIn(List<String> uids);
+
 }

@@ -3,12 +3,13 @@ package com.scaleorange.rentalapp.entitys;
 import com.scaleorange.rentalapp.enums.RentalStatusEnum;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
-import java.nio.ByteBuffer;
-import java.util.Base64;
 
 @Entity
 @Table(name = "rental_orders")
@@ -44,10 +45,16 @@ public class RentalOrder {
     private RentalStatusEnum status;
 
     @Column(nullable = false)
-    private long numberOfMonths; // NEW: store rental duration
+    private long numberOfMonths;
 
     @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal totalAmount; // NEW: store total price
+    private BigDecimal baseAmount; // sum of laptop prices × months
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalGst; // total GST
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalAmount; // baseAmount + totalGst
 
     @OneToMany(mappedBy = "rentalOrder", cascade = CascadeType.ALL)
     private List<Payment> payments;
@@ -57,9 +64,7 @@ public class RentalOrder {
 
     @PrePersist
     public void prePersist() {
-        if (uid == null) {
-            uid = generateUid();
-        }
+        if (uid == null) uid = generateUid();
     }
 
     private String generateUid() {

@@ -2,30 +2,33 @@ package com.scaleorange.rentalapp.entitys;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
-import java.util.List;
+
 import java.util.UUID;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "companies")
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Company {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private UUID uuid = UUID.randomUUID();
+    @Column(nullable = false, unique = true)
+    private String uid;
 
     @Column(nullable = false)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    @Column
     private String address;
 
     @Column(name = "contact_email")
@@ -34,37 +37,42 @@ public class Company {
     @Column(name = "contact_phone")
     private String contactPhone;
 
-    @Column(name = "gst_number", unique = true)
-    private String gstNumber;
-
-    @Column(nullable = false)
-    private Boolean isVendor = false;
-
-    @Column(nullable = false)
-    private Boolean isActive = true;
-
-    @Column(nullable = false)
+    @Column
     private String state;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "gst_number")
+    private String gstNumber;
 
-    @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @Column(name = "pan_number")
+    private String panNumber;
 
-    // Invoices issued by this company (vendor)
-    @OneToMany(mappedBy = "issuerCompany")
-    private List<Invoice> issuedInvoices;
+    @Column(name = "mca_number")
+    private String mcaNumber;
 
-    // Invoices received by this company (customer)
-    @OneToMany(mappedBy = "receiverCompany")
-    private List<Invoice> receivedInvoices;
+    private String documentPath;
 
-    // Payments made by this company (customer)
-    @OneToMany(mappedBy = "payerCompany")
-    private List<Payment> paymentsMade;
+    @Column(name = "is_active")
+    private boolean isActive;
 
-    // Payments received by this company (vendor)
-    @OneToMany(mappedBy = "payeeCompany")
-    private List<Payment> paymentsReceived;
+    @Column(name = "is_vendor")
+    private boolean isVendor;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.uid == null) {
+            this.uid = generateUid();
+        }
+    }
+
+    private String generateUid() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
 }

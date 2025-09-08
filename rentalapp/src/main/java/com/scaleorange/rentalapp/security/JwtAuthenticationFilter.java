@@ -23,6 +23,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
 
+    // Define public endpoints that do NOT require JWT
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/payment/",
+            "/h2-console/"
+    };
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        for (String endpoint : PUBLIC_ENDPOINTS) {
+            if (path.startsWith(endpoint)) {
+                return true; // skip JWT filter for these paths
+            }
+        }
+        return false; // apply filter for all other paths
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -42,7 +59,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            // Map all roles from JWT to Spring Security authorities
             List<String> roles = jwtUtil.getRoles(token);
             List<SimpleGrantedAuthority> authorities = roles.stream()
                     .map(r -> new SimpleGrantedAuthority("ROLE_" + r.toUpperCase()))

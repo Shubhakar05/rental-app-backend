@@ -4,6 +4,7 @@ import com.scaleorange.rentalapp.dtos.RentalRequestDTO;
 import com.scaleorange.rentalapp.dtos.RentalResponseDTO;
 import com.scaleorange.rentalapp.service.RentalService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class RentalController {
 
+    @Autowired
     private final RentalService rentalService;
 
     /**

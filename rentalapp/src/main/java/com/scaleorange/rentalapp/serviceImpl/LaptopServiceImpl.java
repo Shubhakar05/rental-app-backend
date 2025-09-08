@@ -95,6 +95,22 @@ public class LaptopServiceImpl implements LaptopService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Marks a laptop as rented after successful payment
+     */
+    @Override
+    public void markLaptopAsRented(String laptopUid) {
+        Laptops laptop = laptopRepository.findByUid(laptopUid)
+                .orElseThrow(() -> new RuntimeException("Laptop not found"));
+
+        if (laptop.getStatus() != LaptopStatusEnum.AVAILABLE) {
+            throw new RuntimeException("Laptop is not available for rent");
+        }
+
+        laptop.setStatus(LaptopStatusEnum.RENTED);
+        laptopRepository.save(laptop);
+    }
+
     private LaptopResponseDTO toDTO(Laptops laptop) {
         return LaptopResponseDTO.builder()
                 .laptopUuid(laptop.getUid())

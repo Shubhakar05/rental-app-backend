@@ -27,30 +27,22 @@ public class Laptops {
     private String brand;
     private String model;
     private double pricePerMonth;
+
+
     private String specs;
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
     private LaptopStatusEnum status;
 
-    private LocalDateTime lockTime;
-
-    // Make initially nullable to avoid migration issues
     @Column(nullable = true)
     private String vendorUid; // links laptop to vendor
 
     @PrePersist
     public void prePersist() {
-        if (uid == null) {
-            uid = generateUid();
-        }
-        if (status == null) {
-            status = LaptopStatusEnum.AVAILABLE;
-        }
-        // Automatically set a default vendorUid for new rows
-        if (vendorUid == null) {
-            vendorUid = "default_vendor";
-        }
+        if (uid == null) uid = generateUid();
+        if (status == null) status = LaptopStatusEnum.AVAILABLE;
+        if (vendorUid == null) vendorUid = "default_vendor";
     }
 
     private String generateUid() {
@@ -60,10 +52,5 @@ public class Laptops {
         buffer.putLong(uuid.getLeastSignificantBits());
         byte[] bytes = buffer.array();
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes).substring(0, 12);
-    }
-
-    public boolean isLockExpired() {
-        if (status != LaptopStatusEnum.LOCKED || lockTime == null) return false;
-        return lockTime.plusMinutes(5).isBefore(LocalDateTime.now());
     }
 }

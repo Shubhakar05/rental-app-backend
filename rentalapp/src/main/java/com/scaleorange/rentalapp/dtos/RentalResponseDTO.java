@@ -21,5 +21,7 @@ public class RentalResponseDTO {
 
     // Finance info
     private long numberOfMonths;
-    private BigDecimal totalAmount;
+    private BigDecimal baseAmount;   // amount before GST
+    private BigDecimal totalGst;     // total GST applied
+    private BigDecimal totalAmount;  // baseAmount + totalGst
 }

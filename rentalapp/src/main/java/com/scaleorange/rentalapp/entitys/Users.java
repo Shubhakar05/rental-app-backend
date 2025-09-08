@@ -19,36 +19,34 @@ public class Users {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(updatable = false, nullable = false)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, unique = true)
     private String uid;
 
+    @Column(nullable = false)
     private String username;
+
+    @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private RoleEnum role;
-
-
-    private String panNumber;
-    private String gstNumber;
-    private String mcaNumber;
-    private String documentPath;
 
     @Enumerated(EnumType.STRING)
     private VerificationStatusEnum verificationStatus;
 
     private boolean verified;
 
-    // Link to the company the user belongs to (vendor or customer)
+    // Link to company
     @ManyToOne
     @JoinColumn(name = "company_id")
     private Company company;
 
-    // Auto-generate UID before saving
     @PrePersist
     public void prePersist() {
         if (this.uid == null) {

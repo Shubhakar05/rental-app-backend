@@ -1,5 +1,5 @@
 package com.scaleorange.rentalapp.enums;
 
 public enum RentalStatusEnum {
-    PENDING, CONFIRMED, ACTIVE, COMPLETED, CANCELLED
+    PENDING, CONFIRMED, ACTIVE, PAID, FAILED, CANCELLED
 }
