@@ -1,9 +1,9 @@
-package com.scaleorange.rentalapp.entitys;
+package com.scaleorange.rentalapp.dtos;
 
+import com.scaleorange.rentalapp.entitys.Invoice;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "invoice_line_items")
@@ -18,26 +18,20 @@ public class InvoiceLineItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Link back to Invoice
     @ManyToOne
     @JoinColumn(name = "invoice_id", nullable = false)
     private Invoice invoice;
 
-    @ManyToOne
-    @JoinColumn(name = "rental_order_id")
-    private RentalOrder rentalOrder;
-
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String description;
-
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal amountExGst;
-
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal gstAmount;
-
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal amountIncGst;
+    @Column(nullable = false)
+    private String description; // e.g., "Laptop Rental - Model X"
 
     @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private Integer quantity;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal unitPrice;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalPrice; // quantity * unitPrice
 }
