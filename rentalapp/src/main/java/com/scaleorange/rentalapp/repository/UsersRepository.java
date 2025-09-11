@@ -16,4 +16,6 @@ public interface UsersRepository extends JpaRepository<Users, Long> {
     Optional<Users> findByUid(String uid);
     Optional<Users> findByEmail(String email);
     List<Users> findByVerificationStatus(VerificationStatusEnum status);
+
+
 }

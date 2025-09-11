@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice Download</title>
+</head>
+<body>
+<h2>Download Invoice PDF</h2>
+
+<label>Rental UID:</label>
+<input type="text" id="rentalUid" placeholder="Enter Rental UID"><br><br>
+
+<label>JWT Token:</label>
+<textarea id="jwt" rows="3" cols="60" placeholder="Enter JWT Token"></textarea><br><br>
+
+<button id="downloadBtn">Download Invoice</button>
+
+<script>
+    document.getElementById("downloadBtn").addEventListener("click", function() {
+        const rentalUid = document.getElementById("rentalUid").value;
+        const jwt = document.getElementById("jwt").value;
+
+        fetch(`http://localhost:8080/api/invoices/download/${rentalUid}`, {
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + jwt
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Unauthorized or invalid Rental UID");
+            return response.blob(); // Convert response to binary blob
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `invoice_${rentalUid}.pdf`; // filename
+            document.body.appendChild(a);
+            a.click(); // Trigger download
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(err => alert(err));
+    });
+</script>
+</body>
+</html>

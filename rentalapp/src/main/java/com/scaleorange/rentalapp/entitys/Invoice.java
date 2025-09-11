@@ -28,7 +28,6 @@ public class Invoice {
     @Column(unique = true, nullable = false)
     private String invoiceNumber;
 
-    // Link to rental order
     @ManyToOne
     @JoinColumn(name = "rental_order_id", nullable = false)
     private RentalOrder rentalOrder;
@@ -45,9 +44,6 @@ public class Invoice {
     @Column(precision = 12, scale = 2)
     private BigDecimal sgstAmount = BigDecimal.ZERO;
 
-    @Column(precision = 12, scale = 2)
-    private BigDecimal igstAmount = BigDecimal.ZERO;
-
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal totalAmount;
 
@@ -55,16 +51,30 @@ public class Invoice {
     @Column(nullable = false)
     private InvoiceStatusEnum status = InvoiceStatusEnum.DRAFT;
 
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InvoiceLineItem> lineItems;
+
+
     private String pdfUrl;
     private LocalDateTime issuedAt;
     private LocalDateTime paidAt;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
-    private List<InvoiceLineItem> lineItems;
+    // Automatically set timestamps
+    @PrePersist
+    public void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

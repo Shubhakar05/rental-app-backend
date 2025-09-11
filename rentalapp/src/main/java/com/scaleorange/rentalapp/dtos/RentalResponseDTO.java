@@ -23,5 +23,11 @@ public class RentalResponseDTO {
     private long numberOfMonths;
     private BigDecimal baseAmount;   // amount before GST
     private BigDecimal totalGst;     // total GST applied
-    private BigDecimal totalAmount;  // baseAmount + totalGst
+    private BigDecimal cgst;         // half of GST
+    private BigDecimal sgst;         // half of GST
+    private BigDecimal depositAmount;
+    private List<LaptopTransactionDTO> transactions;
+
+    private BigDecimal lateFee;       // late fee, 0 at checkout
+    private BigDecimal totalAmount;  // baseAmount + GST + deposit + lateFee
 }

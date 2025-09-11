@@ -34,11 +34,17 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/signup/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/payment/**").permitAll()
+                        .requestMatchers("/invoice-download-page").permitAll()
+
 
                         // Role-based access
                         .requestMatchers("/api/users/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/rentals/create/**").hasAnyRole("COMPANY_ADMIN")
                         .requestMatchers("/api/laptops/**").hasAnyRole("VENDOR_ADMIN")
+                        .requestMatchers("/api/rentals/return/**")
+                        .hasAnyRole( "COMPANY_ADMIN", "SUPER_ADMIN")
+
+                        .requestMatchers("/api/invoices/download/**").hasAnyRole("COMPANY_ADMIN", "SUPER_ADMIN")
 
 
 

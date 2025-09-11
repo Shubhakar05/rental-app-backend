@@ -57,6 +57,10 @@ public class RentalOrder {
     private BigDecimal totalAmount; // baseAmount + totalGst
 
     @OneToMany(mappedBy = "rentalOrder", cascade = CascadeType.ALL)
+    private List<LaptopRentalTransaction> transactions;
+
+
+    @OneToMany(mappedBy = "rentalOrder", cascade = CascadeType.ALL)
     private List<Payment> payments;
 
     @OneToMany(mappedBy = "rentalOrder", cascade = CascadeType.ALL)
@@ -67,7 +71,7 @@ public class RentalOrder {
         if (uid == null) uid = generateUid();
     }
 
-    private String generateUid() {
+    public String generateUid() {
         UUID uuid = UUID.randomUUID();
         ByteBuffer buffer = ByteBuffer.allocate(16);
         buffer.putLong(uuid.getMostSignificantBits());
